@@ -3,8 +3,7 @@ package edu.iis.mto.testreactor.exc3;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,8 +18,6 @@ public class AtmMachineTest {
     private AtmMachine atmMachine;
 
     private CardProviderService cardProviderService;
-
-    private AuthenticationToken authenticationToken;
 
     private BankService bankService;
 
@@ -94,4 +91,24 @@ public class AtmMachineTest {
 
         atmMachine.withdraw(money, card);
     }
+
+    @Test
+    public void withdrawShouldCallAuthorizeOnce() throws CardAuthorizationException {
+        Money money = Money.builder()
+                           .withAmount(100)
+                           .withCurrency(Currency.PL)
+                           .build();
+
+        Card card = Card.builder()
+                        .withCardNumber("123")
+                        .withPinNumber(123)
+                        .build();
+
+        AuthenticationToken authenticationToken = AuthenticationToken.builder().withAuthorizationCode(123).withUserId("1").build();
+        Mockito.when(cardProviderService.authorize(card)).thenReturn(authenticationToken);
+
+        atmMachine.withdraw(money, card);
+        verify(cardProviderService, atLeastOnce()).authorize(card);
+    }
+
 }

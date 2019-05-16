@@ -111,4 +111,23 @@ public class AtmMachineTest {
         verify(cardProviderService, atLeastOnce()).authorize(card);
     }
 
+    @Test
+    (expected = AtmException.class)
+    public void withdrawWithInsufficientFundsThrowsAtmException() throws InsufficientFundsException, CardAuthorizationException {
+        Money money = Money.builder()
+                           .withAmount(100)
+                           .withCurrency(Currency.PL)
+                           .build();
+
+        Card card = Card.builder()
+                        .withCardNumber("123")
+                        .withPinNumber(123)
+                        .build();
+
+        AuthenticationToken authenticationToken = AuthenticationToken.builder().withAuthorizationCode(123).withUserId("1").build();
+        Mockito.when(cardProviderService.authorize(card)).thenReturn(authenticationToken);
+        doThrow(InsufficientFundsException.class).when(bankService).charge(authenticationToken, money);
+
+        atmMachine.withdraw(money, card);
+    }
 }

@@ -41,7 +41,7 @@ public class AtmMachineTest {
 
     @Test
     (expected = AtmException.class)
-    public void ifAuthorizationFailsWithdrawThrowsAtmException() {
+    public void withdrawThrowsAtmExceptionIfAuthorizationFails() {
         Money money = Money.builder()
                            .withAmount(100)
                            .withCurrency(Currency.PL)
@@ -62,7 +62,7 @@ public class AtmMachineTest {
     }
 
     @Test
-    public void withdrawRetrunsExpectedBanknotePayment() {
+    public void withdrawReturnsExpectedBanknotePayment() {
         Money money = Money.builder()
                            .withAmount(100)
                            .withCurrency(Currency.PL)
@@ -73,16 +73,25 @@ public class AtmMachineTest {
                         .withPinNumber(123)
                         .build();
 
-        AuthenticationToken authenticationToken = AuthenticationToken.builder().withAuthorizationCode(123).withUserId("1").build();
-        try {
-            Mockito.when(cardProviderService.authorize(card)).thenReturn(authenticationToken);
-        } catch (CardAuthorizationException e) {
-            e.printStackTrace();
-        }
-
         Payment result = atmMachine.withdraw(money, card);
         List<Banknote> banknotes = new ArrayList<>();
         banknotes.add(Banknote.PL100);
         assertThat(result, is(new Payment(banknotes)));
+    }
+
+    @Test
+    (expected = WrongMoneyAmountException.class)
+    public void withdrawThrowsWrongMoneyAmountExceptionIfMoneyAmountCannotBePaidWithBanknotes() {
+        Money money = Money.builder()
+                           .withAmount(1)
+                           .withCurrency(Currency.PL)
+                           .build();
+
+        Card card = Card.builder()
+                        .withCardNumber("123")
+                        .withPinNumber(123)
+                        .build();
+
+        atmMachine.withdraw(money, card);
     }
 }
